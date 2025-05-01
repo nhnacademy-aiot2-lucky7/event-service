@@ -28,7 +28,7 @@ public class Event {
     @Comment("이벤트 레벨")
     private String eventLevel;
 
-    @Column(name = "eventAt", updatable = false)
+    @Column(name = "event_at", updatable = false)
     @Comment("이벤트 발생 일자")
     private LocalDateTime eventAt;
 

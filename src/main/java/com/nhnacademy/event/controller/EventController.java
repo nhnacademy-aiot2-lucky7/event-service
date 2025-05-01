@@ -13,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import static org.springframework.data.domain.Sort.Direction.DESC;
@@ -44,7 +43,18 @@ public class EventController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> createEvent(@Validated @RequestBody EventCreateRequest eventCreateRequest) {
+    public ResponseEntity<Void> createEvent(@RequestBody EventCreateRequest eventCreateRequest) {
+        UserResponse userResponse = userAdaptor.getMyInfo().getBody();
+
+        if (userResponse == null) {
+            throw new NotFoundException("UserResponse not found");
+        }
+
+        // admin이 아닐 경우에는 해당 유저의 departmentId를 강제 주입
+        if (!("ROLE_ADMIN").equals(userResponse.getUserRole())) {
+            eventCreateRequest.setDepartmentId(userResponse.getUserDepartment());
+        }
+
         eventService.createEvent(eventCreateRequest);
 
         return ResponseEntity

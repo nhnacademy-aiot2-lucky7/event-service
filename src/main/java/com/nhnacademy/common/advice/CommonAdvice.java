@@ -1,7 +1,6 @@
 package com.nhnacademy.common.advice;
 
 import com.nhnacademy.common.exception.CommonHttpException;
-import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,10 +8,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 /**
  * 전역 예외를 처리하는 Controller Advice 클래스입니다.
@@ -23,33 +18,6 @@ import java.util.Optional;
 @Slf4j
 @RestControllerAdvice
 public class CommonAdvice {
-
-    /**
-     * FeignException 발생 시 처리하는 메서드입니다.
-     * <p>
-     * Feign 클라이언트에서 발생한 예외를 처리합니다.
-     * </p>
-     *
-     * @param e FeignException 예외 객체
-     * @return Feign 클라이언트 에러 메시지와 상태 코드가 포함된 응답
-     */
-    @ExceptionHandler(FeignException.class)
-    public ResponseEntity<String> feignExceptionHandler(FeignException e) {
-        log.error("FeignException 발생: {}", e.getMessage());
-
-        // FeignException에서 상태 코드와 응답 본문 추출
-        HttpStatus status = HttpStatus.valueOf(e.status());
-
-        // Optional<ByteBuffer>에서 ByteBuffer를 꺼내고, Charset으로 변환
-        Optional<ByteBuffer> responseBodyOpt = e.responseBody();
-        String responseBody = responseBodyOpt
-                .map(byteBuffer -> new String(byteBuffer.array(), StandardCharsets.UTF_8))  // ByteBuffer -> String 변환
-                .orElse("No response body");
-
-        return ResponseEntity
-                .status(status)
-                .body("FeignException: " + responseBody);
-    }
 
     /**
      * {@link BindException} 발생 시 처리하는 메서드입니다.

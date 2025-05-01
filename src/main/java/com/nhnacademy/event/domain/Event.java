@@ -33,7 +33,10 @@ public class Event {
     private LocalDateTime eventAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "source_id", nullable = false)
+    @JoinColumns({
+            @JoinColumn(name = "source_id", referencedColumnName = "source_id"),
+            @JoinColumn(name = "source_type", referencedColumnName = "source_type")
+    })
     private EventSource eventSource;
 
     @Column(name = "department_id", length = 50, nullable = false)

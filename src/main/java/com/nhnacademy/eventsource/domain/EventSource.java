@@ -1,9 +1,6 @@
 package com.nhnacademy.eventsource.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Comment;
 
@@ -12,13 +9,14 @@ import org.hibernate.annotations.Comment;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@IdClass(EventSourceId.class)
 public class EventSource {
     @Id
     @Column(name = "source_id", length = 100, nullable = false)
     @Comment("이벤트 출처 아이디")
     private String sourceId;
 
+    @Id
     @Column(name = "source_type", length = 50)
     @Comment("이벤트 출처 타입")
     private String sourceType;

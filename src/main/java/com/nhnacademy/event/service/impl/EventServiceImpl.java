@@ -1,11 +1,14 @@
 package com.nhnacademy.event.service.impl;
 
+import com.nhnacademy.common.exception.NotFoundException;
 import com.nhnacademy.event.domain.Event;
 import com.nhnacademy.event.dto.EventCreateRequest;
+import com.nhnacademy.event.dto.EventFindRequest;
 import com.nhnacademy.event.dto.EventResponse;
 import com.nhnacademy.event.repository.EventRepository;
 import com.nhnacademy.event.service.EventService;
 import com.nhnacademy.eventsource.domain.EventSource;
+import com.nhnacademy.eventsource.domain.EventSourceId;
 import com.nhnacademy.eventsource.repository.EventSourceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,16 +25,22 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final EventSourceRepository eventSourceRepository;
 
+    @Override
     public void createEvent(EventCreateRequest eventCreateRequest) {
-        EventSource eventSource = EventSource.builder()
-                .sourceId(eventCreateRequest.getSourceId())
-                .sourceType(eventCreateRequest.getSourceType())
-                .build();
+        EventSourceId eventSourceId = new EventSourceId(
+                eventCreateRequest.getSourceId(),
+                eventCreateRequest.getSourceType()
+        );
 
-        // sourceId가 없다면 event_source 테이블에 저장. 있다면 이벤트만 저장.
-        if (!eventSourceRepository.existsById(eventCreateRequest.getSourceId())) {
-            eventSourceRepository.save(eventSource);
-        }
+        // DB에 존재하면 가져오고, 없으면 새로 저장
+        EventSource eventSource = eventSourceRepository.findById(eventSourceId)
+                .orElseGet(() -> eventSourceRepository.save(
+                        new EventSource(
+                                eventCreateRequest.getSourceId(),
+                                eventCreateRequest.getSourceType()
+                        )
+                ));
+
 
         Event event = Event.builder()
                 .eventDetails(eventCreateRequest.getEventDetails())
@@ -43,16 +52,19 @@ public class EventServiceImpl implements EventService {
         eventRepository.save(event);
     }
 
+
+    @Override
     public void removeEvent(Long eventNo) {
+        if (!eventRepository.existsById(eventNo)) {
+            throw new NotFoundException("존재하지 않는 eventNo");
+        }
+
         eventRepository.deleteById(eventNo);
     }
 
     @Transactional(readOnly = true)
-    public Page<EventResponse> findByDepartmentIdAndSourceId(String departmentId, String sourceId, Pageable pageable) {
-        if (eventSourceRepository.existsById(departmentId)) {
-
-        }
-
-        return eventRepository.findByDepartmentIdAndSourceId(departmentId, sourceId, pageable);
+    @Override
+    public Page<EventResponse> findEvents(EventFindRequest eventFindRequest, Pageable pageable) {
+        return eventRepository.findEvents(eventFindRequest, pageable);
     }
 }

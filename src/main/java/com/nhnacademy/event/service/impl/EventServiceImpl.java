@@ -44,7 +44,7 @@ public class EventServiceImpl implements EventService {
 
         Event event = Event.builder()
                 .eventDetails(eventCreateRequest.getEventDetails())
-                .eventLevel(eventCreateRequest.getEventLevel())
+                .levelName(eventCreateRequest.getEventLevel())
                 .eventSource(eventSource)
                 .departmentId(eventCreateRequest.getDepartmentId())
                 .build();

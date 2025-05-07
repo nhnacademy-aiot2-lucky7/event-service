@@ -24,9 +24,9 @@ public class Event {
     @Comment("이벤트 내용")
     private String eventDetails;
 
-    @Column(name = "event_level", length = 50, nullable = false)
+    @Column(name = "level_name", length = 50, nullable = false)
     @Comment("이벤트 레벨")
-    private String eventLevel;
+    private String levelName;
 
     @Column(name = "event_at", updatable = false)
     @Comment("이벤트 발생 일자")

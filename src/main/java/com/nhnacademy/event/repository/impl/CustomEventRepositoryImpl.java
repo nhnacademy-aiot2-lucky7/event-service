@@ -43,14 +43,14 @@ public class CustomEventRepositoryImpl extends QuerydslRepositorySupport impleme
         }
         // eventLevel이 존재하면 조건에 추가
         if (eventFindRequest.getEventLevel() != null) {
-            builder.and(qEvent.eventLevel.eq(eventFindRequest.getEventLevel()));
+            builder.and(qEvent.levelName.eq(eventFindRequest.getEventLevel()));
         }
 
         JPAQuery<EventResponse> query = new JPAQuery<>(getEntityManager())
                 .select(Projections.constructor(
                         EventResponse.class,
                         qEvent.eventDetails,
-                        qEvent.eventLevel,
+                        qEvent.levelName,
                         qEvent.eventAt,
                         qEvent.eventSource.sourceId
                 ))

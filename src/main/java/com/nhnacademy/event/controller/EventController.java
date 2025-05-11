@@ -2,6 +2,7 @@ package com.nhnacademy.event.controller;
 
 import com.nhnacademy.adaptor.dto.UserResponse;
 import com.nhnacademy.adaptor.user.UserAdaptor;
+import com.nhnacademy.common.exception.ForbiddenException;
 import com.nhnacademy.common.exception.NotFoundException;
 import com.nhnacademy.event.dto.EventCreateRequest;
 import com.nhnacademy.event.dto.EventFindRequest;
@@ -18,31 +19,26 @@ import org.springframework.web.bind.annotation.*;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
 @RestController
-@RequestMapping("/events")
 @RequiredArgsConstructor
 public class EventController {
     private final EventService eventService;
     private final UserAdaptor userAdaptor;
 
-    @PostMapping("/find-all")
+    @PostMapping("/events/find-all")
     public Page<EventResponse> findAllEvents(
             @RequestBody EventFindRequest eventFindRequest,
             @PageableDefault(size = 10, sort = "eventAt", direction = DESC) Pageable pageable) {
-        UserResponse userResponse = userAdaptor.getMyInfo().getBody();
-
-        if (userResponse == null) {
-            throw new NotFoundException("UserResponse not found");
-        }
+        UserResponse userResponse = userAdaptor.getMyInfo();
 
         // admin이 아닐 경우에는 해당 유저의 departmentId를 강제 주입
         if (!("ROLE_ADMIN").equals(userResponse.getUserRole())) {
-            eventFindRequest.setDepartmentId(userResponse.getUserDepartment());
+            eventFindRequest.setDepartmentId(userResponse.getDepartment().getDepartmentId());
         }
 
         return eventService.findEvents(eventFindRequest, pageable);
     }
 
-    @PostMapping
+    @PostMapping("/events")
     public ResponseEntity<Void> createEvent(@RequestBody EventCreateRequest eventCreateRequest) {
         eventService.createEvent(eventCreateRequest);
 
@@ -51,8 +47,18 @@ public class EventController {
                 .build();
     }
 
-    @DeleteMapping("/{eventNo}")
+    @DeleteMapping("/admin/events/{eventNo}")
     public ResponseEntity<Void> removeEvent(@PathVariable Long eventNo) {
+        UserResponse userResponse = userAdaptor.getMyInfo();
+
+        if (userResponse == null) {
+            throw new NotFoundException("UserResponse not found");
+        }
+
+        if (!("ROLE_ADMIN").equals(userResponse.getUserRole())) {
+            throw new ForbiddenException();
+        }
+
         eventService.removeEvent(eventNo);
 
         return ResponseEntity

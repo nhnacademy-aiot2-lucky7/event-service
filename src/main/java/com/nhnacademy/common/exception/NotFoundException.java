@@ -8,24 +8,14 @@ package com.nhnacademy.common.exception;
  */
 public class NotFoundException extends CommonHttpException {
 
-  /**
-   * HTTP 상태 코드 404 (Not Found)
-   */
-  private static final int STATUS_CODE = 404;
+    private static final int STATUS_CODE = 404;
 
-  /**
-   * 사용자 정의 메시지를 포함한 NotFound 예외를 생성합니다.
-   *
-   * @param message 예외 메시지
-   */
-  public NotFoundException(String message) {
-    super(STATUS_CODE, message);
-  }
-
-  /**
-   * 기본 메시지("NOT FOUND EXCEPTION!!!")를 포함한 NotFound 예외를 생성합니다.
-   */
-  public NotFoundException() {
-    super(STATUS_CODE, "NOT FOUND EXCEPTION!!!");
-  }
+    /**
+     * 사용자 정의 메시지를 포함한 NotFound 예외를 생성합니다.
+     *
+     * @param message 예외 메시지
+     */
+    public NotFoundException(String message) {
+        super(STATUS_CODE, message);
+    }
 }

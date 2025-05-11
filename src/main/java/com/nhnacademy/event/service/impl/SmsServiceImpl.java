@@ -14,7 +14,7 @@ public class SmsServiceImpl implements SmsService {
 
     private final DefaultMessageService messageService;
     private final String fromPhoneNumber;
-
+    
     public SmsServiceImpl(
             @Value("${coolsms.api.key}") String apiKey,
             @Value("${coolsms.api.secret}") String apiSecret,

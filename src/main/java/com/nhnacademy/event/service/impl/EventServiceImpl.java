@@ -1,16 +1,22 @@
 package com.nhnacademy.event.service.impl;
 
+import com.nhnacademy.adaptor.dto.UserResponse;
+import com.nhnacademy.adaptor.user.UserAdaptor;
+import com.nhnacademy.common.exception.ForbiddenException;
 import com.nhnacademy.common.exception.NotFoundException;
+import com.nhnacademy.common.exception.UnauthorizedException;
 import com.nhnacademy.event.domain.Event;
 import com.nhnacademy.event.dto.EventCreateRequest;
 import com.nhnacademy.event.dto.EventFindRequest;
 import com.nhnacademy.event.dto.EventResponse;
-import com.nhnacademy.event.repository.EventRepository;
+import com.nhnacademy.event.dto.EventSourceResponse;
+import com.nhnacademy.event.elasticsearch.EventElasticsearchRepository;
 import com.nhnacademy.event.service.EventService;
 import com.nhnacademy.eventsource.domain.EventSource;
 import com.nhnacademy.eventsource.domain.EventSourceId;
-import com.nhnacademy.eventsource.repository.EventSourceRepository;
 import com.nhnacademy.notification.service.NotificationService;
+import com.nhnacademy.repository.EventRepository;
+import com.nhnacademy.repository.EventSourceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,6 +32,34 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final EventSourceRepository eventSourceRepository;
     private final NotificationService notificationService;
+    private final EventElasticsearchRepository eventElasticsearchRepository;
+    private final UserAdaptor userAdaptor;
+
+    // 이벤트 내용으로 검색하는 메서드 (페이징 처리)
+    @Override
+    public Page<EventResponse> searchEventsByDetails(String keyword, Pageable pageable) {
+        Page<Event> events;
+
+        UserResponse user = userAdaptor.getMyInfo();
+
+        if (user.getUserRole().equals("ROLE_ADMIN")) {
+            events = eventElasticsearchRepository.findByEventDetailsContainingIgnoreCase(keyword, pageable);
+        } else {
+            events = eventElasticsearchRepository.findByDepartmentIdAndEventDetailsContainingIgnoreCase(
+                    user.getDepartment().getDepartmentId(), keyword, pageable
+            );
+        }
+
+        return events.map(event -> new EventResponse(
+                event.getEventDetails(),
+                event.getLevelName(),
+                event.getEventAt(),
+                new EventSourceResponse(
+                        event.getEventSource().getSourceId(),
+                        event.getEventSource().getSourceType()
+                )
+        ));
+    }
 
     @Override
     public void createEvent(EventCreateRequest request) {
@@ -58,6 +92,14 @@ public class EventServiceImpl implements EventService {
     public void removeEvent(Long eventNo) {
         log.info("이벤트 삭제 시작: eventNo: {}", eventNo);
 
+        UserResponse userResponse = userAdaptor.getMyInfo();
+
+        if (userResponse == null) {
+            throw new NotFoundException("UserResponse not found");
+        } else if (!("ROLE_ADMIN").equals(userResponse.getUserRole())) {
+            throw new ForbiddenException();
+        }
+
         if (!eventRepository.existsById(eventNo)) {
             throw new NotFoundException("존재하지 않는 eventNo");
         }
@@ -71,6 +113,14 @@ public class EventServiceImpl implements EventService {
     @Override
     public Page<EventResponse> findEvents(EventFindRequest eventFindRequest, Pageable pageable) {
         log.info("이벤트 페이징 조회 시작");
+
+        UserResponse userResponse = userAdaptor.getMyInfo();
+        String userDepartment = userResponse.getDepartment().getDepartmentId();
+
+        // admin이 아닐 경우에는 해당 유저의 departmentId를 강제 주입
+        if (eventFindRequest.getDepartmentId().equals(userDepartment) && !("ROLE_ADMIN").equals(userResponse.getUserRole())) {
+            throw new UnauthorizedException("권한이 없습니다.");
+        }
 
         Page<EventResponse> events = eventRepository.findEvents(eventFindRequest, pageable);
 

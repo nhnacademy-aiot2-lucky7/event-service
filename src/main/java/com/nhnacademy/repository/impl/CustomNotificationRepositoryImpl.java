@@ -1,9 +1,9 @@
-package com.nhnacademy.notification.repository.impl;
+package com.nhnacademy.repository.impl;
 
 import com.nhnacademy.event.dto.EventResponse;
 import com.nhnacademy.notification.domain.Notification;
 import com.nhnacademy.notification.domain.QNotification;
-import com.nhnacademy.notification.repository.CustomNotificationRepository;
+import com.nhnacademy.repository.CustomNotificationRepository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQuery;

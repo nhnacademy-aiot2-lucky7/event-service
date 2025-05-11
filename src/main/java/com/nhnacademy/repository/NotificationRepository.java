@@ -1,4 +1,4 @@
-package com.nhnacademy.notification.repository;
+package com.nhnacademy.repository;
 
 import com.nhnacademy.notification.domain.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;

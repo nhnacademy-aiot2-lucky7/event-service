@@ -6,9 +6,10 @@ import com.nhnacademy.common.exception.UnauthorizedException;
 import com.nhnacademy.event.domain.Event;
 import com.nhnacademy.event.domain.EventLevel;
 import com.nhnacademy.event.dto.EventResponse;
+import com.nhnacademy.event.service.SmsService;
 import com.nhnacademy.notification.domain.Notification;
-import com.nhnacademy.notification.repository.NotificationRepository;
 import com.nhnacademy.notification.service.NotificationService;
+import com.nhnacademy.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,6 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
+    private final SmsService smsService;
     private final UserAdaptor userAdaptor;
 
     @Override
@@ -37,6 +39,10 @@ public class NotificationServiceImpl implements NotificationService {
             int eventLevel = EventLevel.valueOf(event.getLevelName()).getLevel();
 
             log.debug("유저 {}의 이벤트 레벨: {}, 이벤트 레벨: {}", userResponse.getUserNo(), userEventLevel, eventLevel);
+
+            if (eventLevel >= EventLevel.ERROR.getLevel()) {
+                smsService.sendSms(userResponse.getUserPhone(), event.getEventDetails());
+            }
 
             if (userEventLevel <= eventLevel) {
                 Notification notification = Notification.builder()

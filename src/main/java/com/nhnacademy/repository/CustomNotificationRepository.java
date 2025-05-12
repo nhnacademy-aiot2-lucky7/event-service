@@ -1,4 +1,4 @@
-package com.nhnacademy.notification.repository;
+package com.nhnacademy.repository;
 
 import com.nhnacademy.event.dto.EventResponse;
 import org.springframework.data.domain.Page;

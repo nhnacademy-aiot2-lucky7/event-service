@@ -1,11 +1,11 @@
-package com.nhnacademy.repository.impl;
+package com.nhnacademy.event.repository.impl;
 
 import com.nhnacademy.event.domain.Event;
 import com.nhnacademy.event.domain.QEvent;
 import com.nhnacademy.event.dto.EventFindRequest;
 import com.nhnacademy.event.dto.EventResponse;
 import com.nhnacademy.event.dto.EventSourceResponse;
-import com.nhnacademy.repository.CustomEventRepository;
+import com.nhnacademy.event.repository.CustomEventRepository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQuery;
@@ -53,6 +53,7 @@ public class CustomEventRepositoryImpl extends QuerydslRepositorySupport impleme
                         qEvent.eventDetails,
                         qEvent.levelName,
                         qEvent.eventAt,
+                        qEvent.eventDetails,
                         Projections.constructor(
                                 EventSourceResponse.class,
                                 qEvent.eventSource.sourceId,

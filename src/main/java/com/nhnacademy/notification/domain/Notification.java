@@ -6,8 +6,11 @@ import lombok.*;
 
 @Entity
 @Table(name = "notifications",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"userNo", "event_no"}),
-        indexes = @Index(name = "idx_user_is_read", columnList = "user_no, is_read"))
+        indexes = {
+                @Index(name = "idx_user_is_read", columnList = "user_no, is_read"),
+                @Index(name = "idx_user_no", columnList = "user_no")
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -29,4 +32,3 @@ public class Notification {
         this.isRead = true;
     }
 }
-

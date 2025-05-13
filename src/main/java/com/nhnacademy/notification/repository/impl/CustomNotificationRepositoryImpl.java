@@ -1,9 +1,10 @@
-package com.nhnacademy.repository.impl;
+package com.nhnacademy.notification.repository.impl;
 
 import com.nhnacademy.event.dto.EventResponse;
+import com.nhnacademy.event.dto.EventSourceResponse;
 import com.nhnacademy.notification.domain.Notification;
 import com.nhnacademy.notification.domain.QNotification;
-import com.nhnacademy.repository.CustomNotificationRepository;
+import com.nhnacademy.notification.repository.CustomNotificationRepository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQuery;
@@ -36,7 +37,13 @@ public class CustomNotificationRepositoryImpl extends QuerydslRepositorySupport 
                         qNotification.event.eventDetails,
                         qNotification.event.levelName,
                         qNotification.event.eventAt,
-                        qNotification.event.eventSource.sourceId
+                        qNotification.event.departmentId,
+                        Projections.constructor(
+                                EventSourceResponse.class,
+                                qNotification.event.eventSource.sourceId,
+                                qNotification.event.eventSource.sourceType
+                        )
+
                 ))
                 .from(qNotification)
                 .where(builder)

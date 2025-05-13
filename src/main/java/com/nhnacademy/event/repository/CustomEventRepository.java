@@ -1,4 +1,4 @@
-package com.nhnacademy.repository;
+package com.nhnacademy.event.repository;
 
 import com.nhnacademy.event.dto.EventFindRequest;
 import com.nhnacademy.event.dto.EventResponse;

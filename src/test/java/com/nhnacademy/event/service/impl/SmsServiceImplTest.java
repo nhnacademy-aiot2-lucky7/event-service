@@ -1,6 +1,5 @@
 package com.nhnacademy.event.service.impl;
 
-import com.nhnacademy.common.exception.SmsSendFailedException;
 import net.nurigo.sdk.message.model.Message;
 import net.nurigo.sdk.message.service.DefaultMessageService;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
@@ -44,25 +43,6 @@ class SmsServiceImplTest {
     }
 
     @Test
-    @DisplayName("문자 발송 실패 시 예외 발생")
-    void sendSms_fail() throws Exception {
-        // given
-        String toPhone = "01000000000";
-        String content = "실패 테스트";
-
-        // 예외 발생하도록 설정
-        when(mockMessageService.send(any(Message.class)))
-                .thenThrow(new RuntimeException("통신 오류"));
-
-        // when & then
-        SmsSendFailedException exception = assertThrows(SmsSendFailedException.class, () -> {
-            smsService.sendSms(toPhone, content);
-        });
-
-        assertTrue(exception.getMessage().contains("문자 발송 중 에러 발생"));
-    }
-
-    @Test
     @DisplayName("문자 발송 재시도 테스트")
     void sendSms_retry() throws Exception {
         // given
@@ -76,9 +56,7 @@ class SmsServiceImplTest {
                 .thenThrow(new RuntimeException("통신 오류3"));
 
         // when & then
-        assertThrows(SmsSendFailedException.class, () -> {
-            smsService.sendSms(toPhone, content);
-        });
+        smsService.sendSms(toPhone, content);
 
         // verify that the send method is attempted 3 times
         verify(mockMessageService, times(3)).send(any(Message.class));

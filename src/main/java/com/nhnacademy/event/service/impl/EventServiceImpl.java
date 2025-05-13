@@ -108,7 +108,7 @@ public class EventServiceImpl implements EventService {
         String userDepartment = userResponse.getDepartment().getDepartmentId();
 
         // admin이 아닐 경우에는 해당 유저의 departmentId를 강제 주입
-        if (eventFindRequest.getDepartmentId().equals(userDepartment) && !("ROLE_ADMIN").equals(userResponse.getUserRole())) {
+        if (!eventFindRequest.getDepartmentId().equals(userDepartment) && !("ROLE_ADMIN").equals(userResponse.getUserRole())) {
             throw new UnauthorizedException("권한이 없습니다.");
         }
 

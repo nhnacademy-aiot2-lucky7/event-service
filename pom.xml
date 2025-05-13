@@ -140,12 +140,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.common</groupId>
-            <artifactId>aes-lib</artifactId>
-            <version>1.0.4</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
@@ -295,11 +289,4 @@
             </build>
         </profile>
     </profiles>
-
-    <repositories>
-        <repository>
-            <id>github-packages</id>
-            <url>https://maven.pkg.github.com/nhnacademy-aiot2-lucky7/common-utils</url>
-        </repository>
-    </repositories>
 </project>

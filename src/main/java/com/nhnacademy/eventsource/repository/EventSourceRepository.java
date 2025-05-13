@@ -1,4 +1,4 @@
-package com.nhnacademy.repository;
+package com.nhnacademy.eventsource.repository;
 
 import com.nhnacademy.eventsource.domain.EventSource;
 import com.nhnacademy.eventsource.domain.EventSourceId;

@@ -1,21 +1,21 @@
 package com.nhnacademy.event.dto;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Getter
+@ToString
 public class EventResponse {
     private String eventDetails;
 
     private String eventLevel;
 
     private LocalDateTime eventAt;
+
+    private String departmentId;
 
     private EventSourceResponse eventSource;
 }

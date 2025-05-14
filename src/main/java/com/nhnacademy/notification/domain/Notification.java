@@ -18,7 +18,7 @@ import lombok.*;
 public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long notificationId;
+    private Long notificationNo;
 
     private Long userNo;
 
@@ -26,6 +26,7 @@ public class Notification {
     @JoinColumn(name = "event_no", nullable = false)
     private Event event;
 
+    @Column(columnDefinition = "tinyint")
     private Boolean isRead;
 
     public void updateRead() {

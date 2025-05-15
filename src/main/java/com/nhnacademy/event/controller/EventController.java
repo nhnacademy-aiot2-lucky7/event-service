@@ -19,9 +19,9 @@ public class EventController {
 
     @GetMapping("/events/search-by-details")
     public Page<EventResponse> searchEventsByDetails(
-            @RequestParam String eventDetails,
+            @RequestParam String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
-        return eventService.searchEventsByDetails(eventDetails, pageable);
+        return eventService.searchEventsByDetails(keyword, pageable);
     }
 
     @PostMapping("/events/find-all")

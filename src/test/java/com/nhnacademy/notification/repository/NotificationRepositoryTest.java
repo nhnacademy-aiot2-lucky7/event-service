@@ -13,10 +13,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DataJpaTest
+@ActiveProfiles("test")
 class NotificationRepositoryTest {
 
     @Autowired
@@ -40,6 +44,7 @@ class NotificationRepositoryTest {
                 .levelName("INFO")
                 .departmentId("HR")
                 .eventSource(new EventSource("src1", "대시보드"))
+                .eventAt(LocalDateTime.now())
                 .build();
 
         eventRepository.save(event);

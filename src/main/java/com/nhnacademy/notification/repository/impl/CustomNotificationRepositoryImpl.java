@@ -34,6 +34,7 @@ public class CustomNotificationRepositoryImpl extends QuerydslRepositorySupport 
         JPAQuery<EventResponse> query = new JPAQuery<>(getEntityManager())
                 .select(Projections.constructor(
                         EventResponse.class,
+                        qNotification.event.eventNo,
                         qNotification.event.eventDetails,
                         qNotification.event.levelName,
                         qNotification.event.eventAt,
@@ -43,7 +44,6 @@ public class CustomNotificationRepositoryImpl extends QuerydslRepositorySupport 
                                 qNotification.event.eventSource.sourceId,
                                 qNotification.event.eventSource.sourceType
                         )
-
                 ))
                 .from(qNotification)
                 .where(builder)

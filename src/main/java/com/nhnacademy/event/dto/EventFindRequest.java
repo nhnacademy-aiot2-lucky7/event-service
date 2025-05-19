@@ -21,4 +21,6 @@ public class EventFindRequest {
     private String sourceType;
 
     private String eventLevel;
+
+    private String keyword;
 }

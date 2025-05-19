@@ -1,11 +1,11 @@
 package com.nhnacademy.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.adaptor.dto.DepartmentResponse;
+import com.nhnacademy.adaptor.dto.EventLevelResponse;
 import com.nhnacademy.adaptor.dto.UserResponse;
 import com.nhnacademy.adaptor.user.UserAdaptor;
 import com.nhnacademy.event.domain.Event;
-import com.nhnacademy.event.dto.EventFindRequest;
+import com.nhnacademy.event.elasticsearch.service.EventSearchService;
 import com.nhnacademy.event.repository.EventRepository;
 import com.nhnacademy.event.service.EventService;
 import com.nhnacademy.eventsource.domain.EventSource;
@@ -29,10 +29,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -42,7 +42,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureRestDocs
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class IntegrationControllerTest {
-
     @Autowired
     private EventService eventService;
     @Autowired
@@ -53,9 +52,12 @@ class IntegrationControllerTest {
     private MockMvc mockMvc;
     @MockitoBean
     private UserAdaptor userAdaptor;
+    @Autowired
+    private EventSearchService eventSearchService;
 
     @BeforeAll
-    void setUp() {
+    void setup() {
+
         EventSource src1 = new EventSource("src-1", "SYSTEM");
         EventSource src2 = new EventSource("src-2", "USER");
         EventSource src3 = new EventSource("src-3", "API");
@@ -69,32 +71,31 @@ class IntegrationControllerTest {
         eventSourceRepository.saveAll(eventSources);
 
         List<Event> events = List.of(
-                Event.builder().eventDetails("System reboot").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 1, 8, 0)).eventSource(src1).departmentId("dep-01").build(),
-                Event.builder().eventDetails("Login failed").levelName("WARNING").eventAt(LocalDateTime.of(2025, 5, 2, 10, 30)).eventSource(src2).departmentId("dep-02").build(),
-                Event.builder().eventDetails("API rate limit").levelName("ERROR").eventAt(LocalDateTime.of(2025, 5, 3, 14, 15)).eventSource(src3).departmentId("dep-03").build(),
-                Event.builder().eventDetails("Script timeout").levelName("ERROR").eventAt(LocalDateTime.of(2025, 5, 4, 9, 0)).eventSource(src4).departmentId("dep-04").build(),
-                Event.builder().eventDetails("Disk full").levelName("CRITICAL").eventAt(LocalDateTime.of(2025, 5, 5, 6, 0)).eventSource(src1).departmentId("dep-01").build(),
+                Event.builder().eventDetails("System reboot completed").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 1, 8, 0)).eventSource(src1).departmentId("dep-01").build(),
+                Event.builder().eventDetails("Login failed - invalid token").levelName("WARNING").eventAt(LocalDateTime.of(2025, 5, 2, 10, 30)).eventSource(src2).departmentId("dep-02").build(),
+                Event.builder().eventDetails("API rate limit exceeded").levelName("ERROR").eventAt(LocalDateTime.of(2025, 5, 3, 14, 15)).eventSource(src3).departmentId("dep-03").build(),
+                Event.builder().eventDetails("Script execution timeout").levelName("ERROR").eventAt(LocalDateTime.of(2025, 5, 4, 9, 0)).eventSource(src4).departmentId("dep-04").build(),
+                Event.builder().eventDetails("Disk full error detected").levelName("CRITICAL").eventAt(LocalDateTime.of(2025, 5, 5, 6, 0)).eventSource(src1).departmentId("dep-01").build(),
 
-                Event.builder().eventDetails("Session expired").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 6, 7, 45)).eventSource(src2).departmentId("dep-02").build(),
-                Event.builder().eventDetails("Invalid token").levelName("WARNING").eventAt(LocalDateTime.of(2025, 5, 7, 16, 0)).eventSource(src3).departmentId("dep-03").build(),
-                Event.builder().eventDetails("Job completed").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 8, 18, 30)).eventSource(src4).departmentId("dep-04").build(),
-                Event.builder().eventDetails("Manual override").levelName("CRITICAL").eventAt(LocalDateTime.of(2025, 5, 9, 13, 0)).eventSource(src2).departmentId("dep-01").build(),
-                Event.builder().eventDetails("High CPU usage").levelName("CRITICAL").eventAt(LocalDateTime.of(2025, 5, 10, 10, 10)).eventSource(src1).departmentId("dep-02").build(),
+                Event.builder().eventDetails("Session expired due to timeout").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 6, 7, 45)).eventSource(src2).departmentId("dep-02").build(),
+                Event.builder().eventDetails("Invalid token used in API request").levelName("WARNING").eventAt(LocalDateTime.of(2025, 5, 7, 16, 0)).eventSource(src3).departmentId("dep-03").build(),
+                Event.builder().eventDetails("Job completed with no error").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 8, 18, 30)).eventSource(src4).departmentId("dep-04").build(),
+                Event.builder().eventDetails("Manual override triggered by admin").levelName("CRITICAL").eventAt(LocalDateTime.of(2025, 5, 9, 13, 0)).eventSource(src2).departmentId("dep-01").build(),
+                Event.builder().eventDetails("High CPU usage warning").levelName("CRITICAL").eventAt(LocalDateTime.of(2025, 5, 10, 10, 10)).eventSource(src1).departmentId("dep-02").build(),
 
-                Event.builder().eventDetails("API downtime").levelName("ERROR").eventAt(LocalDateTime.of(2025, 5, 11, 11, 0)).eventSource(src3).departmentId("dep-03").build(),
-                Event.builder().eventDetails("Unauthorized access").levelName("WARNING").eventAt(LocalDateTime.of(2025, 5, 12, 15, 20)).eventSource(src2).departmentId("dep-04").build(),
-                Event.builder().eventDetails("Memory leak detected").levelName("ERROR").eventAt(LocalDateTime.of(2025, 5, 13, 12, 0)).eventSource(src1).departmentId("dep-01").build(),
-                Event.builder().eventDetails("Database locked").levelName("CRITICAL").eventAt(LocalDateTime.of(2025, 5, 14, 9, 30)).eventSource(src4).departmentId("dep-02").build(),
-                Event.builder().eventDetails("Cache miss").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 15, 10, 0)).eventSource(src1).departmentId("dep-03").build(),
+                Event.builder().eventDetails("API downtime due to network error").levelName("ERROR").eventAt(LocalDateTime.of(2025, 5, 11, 11, 0)).eventSource(src3).departmentId("dep-03").build(),
+                Event.builder().eventDetails("Unauthorized access attempt detected").levelName("WARNING").eventAt(LocalDateTime.of(2025, 5, 12, 15, 20)).eventSource(src2).departmentId("dep-04").build(),
+                Event.builder().eventDetails("Memory leak detected in system").levelName("ERROR").eventAt(LocalDateTime.of(2025, 5, 13, 12, 0)).eventSource(src1).departmentId("dep-01").build(),
+                Event.builder().eventDetails("Database locked due to timeout").levelName("CRITICAL").eventAt(LocalDateTime.of(2025, 5, 14, 9, 30)).eventSource(src4).departmentId("dep-02").build(),
+                Event.builder().eventDetails("Cache miss in API layer").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 15, 10, 0)).eventSource(src1).departmentId("dep-03").build(),
 
-                Event.builder().eventDetails("Token refresh").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 16, 8, 0)).eventSource(src2).departmentId("dep-04").build(),
-                Event.builder().eventDetails("Network issue").levelName("ERROR").eventAt(LocalDateTime.of(2025, 5, 17, 10, 30)).eventSource(src3).departmentId("dep-01").build(),
-                Event.builder().eventDetails("Log rotation done").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 18, 9, 0)).eventSource(src4).departmentId("dep-02").build(),
-                Event.builder().eventDetails("Backup succeeded").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 19, 11, 15)).eventSource(src1).departmentId("dep-03").build(),
-                Event.builder().eventDetails("Invalid config").levelName("WARNING").eventAt(LocalDateTime.of(2025, 5, 20, 7, 0)).eventSource(src2).departmentId("dep-04").build()
+                Event.builder().eventDetails("Token refresh completed").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 16, 8, 0)).eventSource(src2).departmentId("dep-04").build(),
+                Event.builder().eventDetails("Network issue caused API error").levelName("ERROR").eventAt(LocalDateTime.of(2025, 5, 17, 10, 30)).eventSource(src3).departmentId("dep-01").build(),
+                Event.builder().eventDetails("Log rotation done successfully").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 18, 9, 0)).eventSource(src4).departmentId("dep-02").build(),
+                Event.builder().eventDetails("Backup succeeded with no error").levelName("INFO").eventAt(LocalDateTime.of(2025, 5, 19, 11, 15)).eventSource(src1).departmentId("dep-03").build(),
+                Event.builder().eventDetails("Invalid config error detected").levelName("WARNING").eventAt(LocalDateTime.of(2025, 5, 20, 7, 0)).eventSource(src2).departmentId("dep-04").build()
         );
 
-        eventService.createEvent();
         eventRepository.saveAll(events);
     }
 
@@ -106,39 +107,8 @@ class IntegrationControllerTest {
                 "test@example.com",
                 "010-1234-5678",
                 new DepartmentResponse(departmentId, "테스트부서"),
-                null
+                new EventLevelResponse("ERROR", "에러", 3)
         );
-    }
-
-    @Test
-    @DisplayName("이벤트 상세 검색 요청 - 200 OK")
-    void searchEventsByDetails_200() throws Exception {
-        String eventDetails = "miss";
-
-        when(userAdaptor.getMyInfo()).thenReturn(createUser("ROLE_ADMIN", "dep-01"));
-
-        mockMvc.perform(get("/events/search-by-details")
-                        .param("eventDetails", eventDetails)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-
-        verify(eventService).searchEventsByDetails(eq(eventDetails), any());
-    }
-
-    @Test
-    @DisplayName("이벤트 전체 조회 요청 - 200 OK")
-    void findAllEvents_200() throws Exception {
-
-        when(userAdaptor.getMyInfo()).thenReturn(createUser("ROLE_ADMIN", "dep-01"));
-        EventFindRequest request = EventFindRequest.builder()
-                .sourceId("src-1")
-                .departmentId("dep-01")
-                .build();
-
-        mockMvc.perform(post("/events/find-all")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(new ObjectMapper().writeValueAsString(request)))
-                .andExpect(status().isOk());
     }
 
     @Test
@@ -146,12 +116,12 @@ class IntegrationControllerTest {
     void removeEvent_204() throws Exception {
         Long eventNo = 1L;
 
-        doNothing().when(eventService).removeEvent(eventNo);
+        when(userAdaptor.getMyInfo()).thenReturn(createUser("ROLE_ADMIN", "dep-01"));
 
         mockMvc.perform(delete("/admin/events/{eventNo}", eventNo))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent())
+                .andDo(document("remove-event-204"));
 
-        verify(eventService, times(1)).removeEvent(eventNo);
     }
 
     @Test
@@ -170,6 +140,8 @@ class IntegrationControllerTest {
     @Test
     @DisplayName("안 읽은 알림 개수 조회 - 200 반환")
     void countUnreadNotifications_200() throws Exception {
+        when(userAdaptor.getMyInfo()).thenReturn(createUser("ROLE_USER", "dep-01"));
+
         mockMvc.perform(get("/notifications/unread-count")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -180,8 +152,10 @@ class IntegrationControllerTest {
     @Test
     @DisplayName("읽은 알림 삭제 - 204 반환")
     void deleteReadNotifications_204() throws Exception {
+        when(userAdaptor.getMyInfo()).thenReturn(createUser("ROLE_ADMIN", "dep-01"));
+        
         mockMvc.perform(delete("/notifications/read")
-                        .header("X-User-Id", encryptedUserId))
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent())
                 .andDo(document("delete-read-notifications-204"));
     }

@@ -2,6 +2,7 @@ package com.nhnacademy.notification.service.impl;
 
 import com.nhnacademy.adaptor.dto.UserResponse;
 import com.nhnacademy.adaptor.user.UserAdaptor;
+import com.nhnacademy.common.exception.NotFoundException;
 import com.nhnacademy.common.exception.UnauthorizedException;
 import com.nhnacademy.event.domain.Event;
 import com.nhnacademy.event.domain.EventLevel;
@@ -26,6 +27,16 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final SmsService smsService;
     private final UserAdaptor userAdaptor;
+
+    @Override
+    public EventResponse getNotification(Long notificationNo) {
+        Notification notification = notificationRepository.findById(notificationNo)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 알림"));
+
+        notification.updateRead();
+
+        return EventResponse.from(notification.getEvent());
+    }
 
     @Override
     public void saveNotification(Event event) {

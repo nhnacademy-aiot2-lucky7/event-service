@@ -7,11 +7,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface EventService {
+    EventResponse getEventByEventNo(Long eventNo);
+
     void createEvent(EventCreateRequest eventCreateRequest);
 
     void removeEvent(Long eventNo);
 
-    Page<EventResponse> findEvents(EventFindRequest eventFindRequest, Pageable pageable);
-
-    Page<EventResponse> searchEventsByDetails(String keyword, Pageable pageable);
+    Page<EventResponse> searchEvents(EventFindRequest eventFindRequest, Pageable pageable);
 }

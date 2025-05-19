@@ -3,16 +3,16 @@ package com.nhnacademy.event.elasticsearch.service;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
 import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import com.nhnacademy.event.dto.EventFindRequest;
 import com.nhnacademy.event.dto.EventResponse;
 import com.nhnacademy.event.dto.EventSourceResponse;
 import com.nhnacademy.event.elasticsearch.document.EventDocument;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EventSearchService {
@@ -29,28 +30,27 @@ public class EventSearchService {
     private final ElasticsearchClient elasticsearchClient;
 
     // 검색 메소드
-    public Page<EventResponse> searchEventsByDetails(String departmentId, String keyword, Pageable pageable) {
+    public Page<EventResponse> searchEventsByDetails(EventFindRequest eventFindRequest, Pageable pageable) {
         try {
-            Query query;
-            if (departmentId == null) {
-                query = MatchQuery.of(m -> m
-                        .field("eventDetails")
-                        .query(keyword)
-                )._toQuery();
-            } else {
-                BoolQuery boolQuery = BoolQuery.of(b -> b
-                        .must(TermQuery.of(t -> t
-                                .field("departmentId")
-                                .value(departmentId)
-                        )._toQuery())
-                        .must(MatchQuery.of(m -> m
-                                .field("eventDetails")
-                                .query(keyword)
-                        )._toQuery())
-                );
-                query = boolQuery._toQuery();
-            }
+            // BoolQuery 조건을 동적으로 추가
+            Query query = Query.of(q -> q
+                    .bool(b -> {
+                        mustTermIfNotBlank(b, "departmentId", eventFindRequest.getDepartmentId());
+                        mustTermIfNotBlank(b, "eventSource.sourceId", eventFindRequest.getSourceId());
+                        mustTermIfNotBlank(b, "eventSource.sourceType", eventFindRequest.getSourceType());
+                        mustTermIfNotBlank(b, "levelName", eventFindRequest.getEventLevel());
+                        if (eventFindRequest.getKeyword() != null && !eventFindRequest.getKeyword().isEmpty()) {
+                            b.must(m -> m.match(t -> t
+                                    .field("eventDetails")
+                                    .query(eventFindRequest.getKeyword())
+                            ));
+                        }
 
+                        return b;
+                    })
+            );
+
+            // 검색 실행
             SearchResponse<EventDocument> response = elasticsearchClient.search(s -> s
                             .index(INDEX)
                             .query(query)
@@ -65,9 +65,11 @@ public class EventSearchService {
                     EventDocument.class
             );
 
+            // 검색 결과 매핑
             List<EventResponse> contents = response.hits().hits().stream()
                     .map(Hit::source)
                     .map(event -> new EventResponse(
+                            event.getEventNo(),
                             event.getEventDetails(),
                             event.getLevelName(),
                             event.getEventAt(),
@@ -90,6 +92,7 @@ public class EventSearchService {
         }
     }
 
+
     // 저장 메소드
     public void saveEvent(EventDocument eventDocument) {
         try {
@@ -107,4 +110,14 @@ public class EventSearchService {
             throw new RuntimeException("Failed to save document to Elasticsearch", e);
         }
     }
+
+    private void mustTermIfNotBlank(BoolQuery.Builder b, String field, String value) {
+        if (value != null && !value.isEmpty()) {
+            b.must(m -> m.term(t -> t
+                    .field(field)
+                    .value(value)
+            ));
+        }
+    }
+
 }

@@ -17,6 +17,11 @@ import org.springframework.web.bind.annotation.*;
 public class NotificationController {
     private final NotificationService notificationService;
 
+    @GetMapping("/{notification-no}")
+    public ResponseEntity<EventResponse> getNotification(@PathVariable("notification-no") Long notificationNo) {
+        return ResponseEntity.ok(notificationService.getNotification(notificationNo));
+    }
+
     // 알림 목록 조회 (읽음 여부 필터링)
     @GetMapping
     public ResponseEntity<Page<EventResponse>> getNotifications(

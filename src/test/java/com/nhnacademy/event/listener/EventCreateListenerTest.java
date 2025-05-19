@@ -23,7 +23,6 @@ class EventCreateListenerTest {
                 "DEP-001",
                 LocalDateTime.now()
         );
-        // 여기서 request에 필요한 값들을 채워줄 수도 있어요.
 
         // when
         listener.handlerCreateEvent(request);

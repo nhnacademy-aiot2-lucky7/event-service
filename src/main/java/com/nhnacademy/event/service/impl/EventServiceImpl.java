@@ -35,19 +35,44 @@ public class EventServiceImpl implements EventService {
     private final UserAdaptor userAdaptor;
     private final EventSearchService eventSearchService;
 
+    @Override
+    public EventResponse getEventByEventNo(Long eventNo) {
+        UserResponse user = userAdaptor.getMyInfo();
+        log.debug("이벤트 조회 요청: 이벤트번호={}", eventNo);
+
+        Event event = eventRepository.findById(eventNo)
+                .orElseThrow(() -> {
+                    log.warn("존재하지 않는 이벤트: eventNo={}", eventNo);
+                    return new NotFoundException("존재하지않는 이벤트");
+                });
+
+        if (!user.getDepartment().getDepartmentId().equals(event.getDepartmentId()) &&
+                !user.getUserRole().equals("ROLE_ADMIN")) {
+            throw new UnauthorizedException("권한이 부족합니다.");
+        }
+
+        log.debug("이벤트 조회 성공: eventNo={}", eventNo);
+        return EventResponse.from(event);
+    }
+
+
     // 이벤트 내용으로 검색하는 메서드 (페이징 처리)
     @Override
-    public Page<EventResponse> searchEventsByDetails(String keyword, Pageable pageable) {
+    public Page<EventResponse> searchEvents(EventFindRequest eventFindRequest, Pageable pageable) {
         UserResponse user = userAdaptor.getMyInfo();
+        log.debug("이벤트 검색 요청: 역할={}", user.getUserRole());
 
-        if (user.getUserRole().equals("ROLE_ADMIN")) {
-            return eventSearchService.searchEventsByDetails(null, keyword, pageable);
-        } else {
-            return eventSearchService.searchEventsByDetails(
-                    user.getDepartment().getDepartmentId(), keyword, pageable
-            );
+        if (!user.getUserRole().equals("ROLE_ADMIN")) {
+            eventFindRequest.setDepartmentId(user.getDepartment().getDepartmentId());
+            log.debug("일반 사용자이므로 부서 ID 설정됨: {}", eventFindRequest.getDepartmentId());
         }
+
+        Page<EventResponse> result = eventSearchService.searchEventsByDetails(eventFindRequest, pageable);
+        log.info("이벤트 검색 완료: 결과 수={}, 페이지 크기={}", result.getTotalElements(), pageable.getPageSize());
+
+        return result;
     }
+
 
     @Override
     public void createEvent(EventCreateRequest request) {
@@ -80,7 +105,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public void removeEvent(Long eventNo) {
-        log.info("이벤트 삭제 시작: eventNo: {}", eventNo);
+        log.debug("이벤트 삭제 시작: eventNo: {}", eventNo);
 
         UserResponse userResponse = userAdaptor.getMyInfo();
 
@@ -91,30 +116,11 @@ public class EventServiceImpl implements EventService {
         }
 
         if (!eventRepository.existsById(eventNo)) {
-            throw new NotFoundException("존재하지 않는 eventNo");
+            throw new NotFoundException("존재하지 않는 이벤트");
         }
 
         eventRepository.deleteById(eventNo);
 
         log.info("이벤트 삭제 완료: eventNo: {}", eventNo);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public Page<EventResponse> findEvents(EventFindRequest eventFindRequest, Pageable pageable) {
-        log.info("이벤트 페이징 조회 시작");
-
-        UserResponse userResponse = userAdaptor.getMyInfo();
-        String userDepartment = userResponse.getDepartment().getDepartmentId();
-
-        // admin이 아닐 경우에는 해당 유저의 departmentId를 강제 주입
-        if (!eventFindRequest.getDepartmentId().equals(userDepartment) && !("ROLE_ADMIN").equals(userResponse.getUserRole())) {
-            throw new UnauthorizedException("권한이 없습니다.");
-        }
-
-        Page<EventResponse> events = eventRepository.findEvents(eventFindRequest, pageable);
-
-        log.info("이벤트 페이징 조회 완료: totalElements: {}", events.getTotalElements());
-        return events;
     }
 }

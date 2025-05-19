@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Builder
 public class Event {
 
-    @jakarta.persistence.Id // JPA 식별자
+    @Id // JPA 식별자
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "event_no")
     @Comment("이벤트 번호")

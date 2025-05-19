@@ -10,30 +10,26 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import static org.springframework.data.domain.Sort.Direction.DESC;
-
 @RestController
 @RequiredArgsConstructor
 public class EventController {
     private final EventService eventService;
 
-    @GetMapping("/events/search-by-details")
-    public Page<EventResponse> searchEventsByDetails(
-            @RequestParam String eventDetails,
-            @PageableDefault(size = 10) Pageable pageable) {
-        return eventService.searchEventsByDetails(eventDetails, pageable);
+    @GetMapping("/events/{event-no}")
+    public EventResponse getEventByEventNo(@PathVariable("event-no") Long eventNo) {
+
+        return eventService.getEventByEventNo(eventNo);
     }
 
-    @PostMapping("/events/find-all")
-    public Page<EventResponse> findAllEvents(
+    @PostMapping("/events/search")
+    public Page<EventResponse> searchEvents(
             @RequestBody EventFindRequest eventFindRequest,
-            @PageableDefault(size = 10, sort = "eventAt", direction = DESC) Pageable pageable) {
-
-        return eventService.findEvents(eventFindRequest, pageable);
+            @PageableDefault(size = 10) Pageable pageable) {
+        return eventService.searchEvents(eventFindRequest, pageable);
     }
 
-    @DeleteMapping("/admin/events/{eventNo}")
-    public ResponseEntity<Void> removeEvent(@PathVariable Long eventNo) {
+    @DeleteMapping("/admin/events/{event-no}")
+    public ResponseEntity<Void> removeEvent(@PathVariable("event-no") Long eventNo) {
         eventService.removeEvent(eventNo);
 
         return ResponseEntity

@@ -4,8 +4,6 @@ import com.nhnacademy.common.exception.CommonHttpException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -18,33 +16,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice
 public class CommonAdvice {
-
-    /**
-     * {@link BindException} 발생 시 처리하는 메서드입니다.
-     * <p>
-     * 주로 @Valid, @Validated 어노테이션을 사용한 요청 바인딩 시 유효성 검사에 실패하면 발생합니다.
-     * </p>
-     *
-     * @param e BindException 예외 객체
-     * @return 400 Bad Request와 함께 상세 필드 에러 메시지를 포함한 응답
-     */
-    @ExceptionHandler(BindException.class)
-    public ResponseEntity<String> bindExceptionHandler(BindException e) {
-        log.warn("BindException 발생: {}", e.getMessage());
-
-        StringBuilder errorMessage = new StringBuilder("Bad Request: ");
-
-        for (FieldError fieldError : e.getFieldErrors()) {
-            errorMessage.append(fieldError.getField())
-                    .append(" - ")
-                    .append(fieldError.getDefaultMessage())
-                    .append("; ");
-        }
-
-        return ResponseEntity
-                .badRequest()
-                .body(errorMessage.toString());
-    }
 
     /**
      * {@link CommonHttpException} 예외 처리 메서드입니다.

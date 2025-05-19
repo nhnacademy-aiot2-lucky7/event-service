@@ -5,10 +5,8 @@ import com.nhnacademy.adaptor.dto.UserResponse;
 import com.nhnacademy.adaptor.user.UserAdaptor;
 import com.nhnacademy.common.exception.ForbiddenException;
 import com.nhnacademy.common.exception.NotFoundException;
-import com.nhnacademy.common.exception.UnauthorizedException;
 import com.nhnacademy.event.domain.Event;
 import com.nhnacademy.event.dto.EventCreateRequest;
-import com.nhnacademy.event.dto.EventFindRequest;
 import com.nhnacademy.event.dto.EventResponse;
 import com.nhnacademy.event.elasticsearch.document.EventDocument;
 import com.nhnacademy.event.elasticsearch.service.EventSearchService;
@@ -22,19 +20,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
 class EventServiceImplTest {
@@ -62,6 +58,28 @@ class EventServiceImplTest {
                 new DepartmentResponse(departmentId, "테스트부서"),
                 null
         );
+    }
+
+    @Test
+    @DisplayName("이벤트 조회 - 정상 케이스")
+    void testGetEventByEventNo() {
+        Event event = Event.builder().
+                eventDetails("System reboot").
+                levelName("INFO").
+                eventAt(LocalDateTime.now()).
+                eventSource(new EventSource("src-1", "SYSTEM")).
+                departmentId("dep-01")
+                .build();
+
+        when(userAdaptor.getMyInfo()).thenReturn(createUser("ROLE_ADMIN", "dep-01"));
+        when(eventRepository.findById(anyLong())).thenReturn(Optional.of(event));
+
+        EventResponse eventResponse = eventService.getEventByEventNo(1L);
+
+        verify(eventRepository).findById(1L);
+
+        assertEquals("System reboot", eventResponse.getEventDetails());
+        assertEquals("dep-01", eventResponse.getDepartmentId());
     }
 
     @Test
@@ -114,61 +132,5 @@ class EventServiceImplTest {
         when(userAdaptor.getMyInfo()).thenReturn(createUser("ROLE_USER", "dep-01"));
 
         assertThrows(ForbiddenException.class, () -> eventService.removeEvent(1L));
-    }
-
-    @Test
-    @DisplayName("검색 - 어드민은 부서 제한 없이 검색")
-    void testSearchEventsByDetails_Admin() {
-        when(userAdaptor.getMyInfo()).thenReturn(createUser("ROLE_ADMIN", "dep-01"));
-        when(eventSearchService.searchEventsByDetails(null, "오류", Pageable.ofSize(10)))
-                .thenReturn(Page.empty());
-
-        eventService.searchEventsByDetails("오류", Pageable.ofSize(10));
-
-        verify(eventSearchService).searchEventsByDetails(null, "오류", Pageable.ofSize(10));
-    }
-
-    @Test
-    @DisplayName("검색 - 일반 유저는 부서로 제한")
-    void testSearchEventsByDetails_User() {
-        when(userAdaptor.getMyInfo()).thenReturn(createUser("ROLE_USER", "dep-03"));
-        when(eventSearchService.searchEventsByDetails(eq("dep-03"), eq("로그"), any(Pageable.class)))
-                .thenReturn(Page.empty());
-
-        eventService.searchEventsByDetails("로그", Pageable.ofSize(5));
-
-        verify(eventSearchService).searchEventsByDetails("dep-03", "로그", Pageable.ofSize(5));
-    }
-
-    @Test
-    @DisplayName("이벤트 목록 조회 - 관리자가 아닌데 다른 부서 요청 시 Unauthorized")
-    void testFindEvents_Unauthorized() {
-        when(userAdaptor.getMyInfo()).thenReturn(createUser("ROLE_USER", "dep-01"));
-
-        EventFindRequest request = EventFindRequest.builder()
-                .departmentId("dep-02")
-                .build();
-
-        assertThrows(UnauthorizedException.class, () -> eventService.findEvents(request, Pageable.ofSize(10)));
-    }
-
-    @Test
-    @DisplayName("이벤트 목록 조회 - 정상 조회")
-    void testFindEvents_Success() {
-        when(userAdaptor.getMyInfo()).thenReturn(createUser("ROLE_ADMIN", "dep-01"));
-
-        EventFindRequest request = EventFindRequest.builder()
-                .departmentId("dep-02")
-                .build();
-
-        List<EventResponse> list = List.of(mock(EventResponse.class));
-        Page<EventResponse> page = new PageImpl<>(list);
-
-        when(eventRepository.findEvents(request, Pageable.ofSize(10))).thenReturn(page);
-
-        Page<EventResponse> result = eventService.findEvents(request, Pageable.ofSize(10));
-
-        assertEquals(1, result.getTotalElements());
-        verify(eventRepository).findEvents(request, Pageable.ofSize(10));
     }
 }

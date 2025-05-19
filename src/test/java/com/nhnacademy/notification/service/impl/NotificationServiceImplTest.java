@@ -87,7 +87,7 @@ class NotificationServiceImplTest {
         // given
         Pageable pageable = Pageable.ofSize(10);
         List<EventResponse> notifications = List.of(
-                new EventResponse("디스크 부족", "ERROR", null, "dep-01", null)
+                new EventResponse(1L, "디스크 부족", "ERROR", null, "dep-01", null)
         );
         Page<EventResponse> page = new PageImpl<>(notifications);
 

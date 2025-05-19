@@ -50,10 +50,11 @@ public class CustomEventRepositoryImpl extends QuerydslRepositorySupport impleme
         JPAQuery<EventResponse> query = new JPAQuery<>(getEntityManager())
                 .select(Projections.constructor(
                         EventResponse.class,
+                        qEvent.eventNo,
                         qEvent.eventDetails,
                         qEvent.levelName,
                         qEvent.eventAt,
-                        qEvent.eventDetails,
+                        qEvent.departmentId,
                         Projections.constructor(
                                 EventSourceResponse.class,
                                 qEvent.eventSource.sourceId,

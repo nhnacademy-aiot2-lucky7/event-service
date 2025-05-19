@@ -7,17 +7,24 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
+@EnableAutoConfiguration(exclude = {RabbitAutoConfiguration.class})
+@Import(SmsServiceImpl.class)
 class SmsServiceImplTest {
 
     @Autowired
-    private SmsServiceImpl smsService;  // 실제 SmsServiceImpl 빈을 사용하여 테스트
+    private SmsServiceImpl smsService;
 
     private DefaultMessageService mockMessageService;
 

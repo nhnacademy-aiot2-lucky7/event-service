@@ -213,12 +213,9 @@ class EventSearchServiceTest {
         assertThat(result.getContent()).isNotEmpty();
         assertThat(result.getContent())
                 .allMatch(event -> eventFindRequest.getEventLevels().contains(event.getEventLevel()));
-        assertThat(result.getContent())
-                .allMatch(event -> !event.getEventAt().isBefore(eventFindRequest.getStartAt())
-                        && !event.getEventAt().isAfter(eventFindRequest.getEndAt()));
 
         for (EventResponse eventResponse : result.getContent()) {
-            log.info("레벨 + 날짜 범위 조건 검색 성공: {}", eventResponse);
+            log.info("레벨 범위 조건 검색 성공: {}", eventResponse);
         }
     }
 

@@ -28,6 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 
@@ -93,7 +94,7 @@ class EventSearchServiceTest {
                         .eventNo(1L)
                         .eventDetails("System Error occurred in the DB layer")  // 1번만 중복
                         .levelName("CRITICAL")
-                        .eventAt(LocalDateTime.of(2025, 5, 12, 0, 0, 0, 0))
+                        .eventAt(LocalDateTime.of(2025, 5, 12, 2, 0, 0, 0).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
                         .departmentId("IT001")
                         .eventSource(
                                 EventSourceDocument.builder()
@@ -106,7 +107,7 @@ class EventSearchServiceTest {
                         .eventNo(2L)
                         .eventDetails("Database connection failure detected")  // 다른 내용
                         .levelName("ERROR")
-                        .eventAt(LocalDateTime.of(2025, 5, 12, 0, 0, 0, 0))
+                        .eventAt(LocalDateTime.of(2025, 5, 12, 0, 0, 0, 0).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
                         .departmentId("DB_ADMIN")
                         .eventSource(
                                 EventSourceDocument.builder()
@@ -119,7 +120,7 @@ class EventSearchServiceTest {
                         .eventNo(3L)
                         .eventDetails("API response timeout occurred")  // 다르게 변경
                         .levelName("WARN")
-                        .eventAt(LocalDateTime.of(2025, 5, 12, 0, 0, 0, 0))
+                        .eventAt(LocalDateTime.of(2025, 5, 12, 2, 0, 0, 0).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
                         .departmentId("DEVOPS")
                         .eventSource(
                                 EventSourceDocument.builder()
@@ -132,7 +133,7 @@ class EventSearchServiceTest {
                         .eventNo(4L)
                         .eventDetails("Memory leak detected in system")  // 변경
                         .levelName("CRITICAL")
-                        .eventAt(LocalDateTime.of(2025, 5, 12, 0, 0, 0, 0))
+                        .eventAt(LocalDateTime.of(2025, 5, 12, 2, 0, 0, 0).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
                         .departmentId("IT001")
                         .eventSource(
                                 EventSourceDocument.builder()
@@ -145,7 +146,7 @@ class EventSearchServiceTest {
                         .eventNo(5L)
                         .eventDetails("API connection timeout warning")  // 변경
                         .levelName("WARN")
-                        .eventAt(LocalDateTime.of(2025, 5, 12, 0, 0, 0, 0))
+                        .eventAt(LocalDateTime.of(2025, 5, 12, 0, 0, 0, 0).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
                         .departmentId("DEVOPS")
                         .eventSource(
                                 EventSourceDocument.builder()
@@ -163,7 +164,7 @@ class EventSearchServiceTest {
 
     @Test
     @DisplayName("eventDetails 검색으로 여러 이벤트 찾기")
-    void testFindByEventDetailsContainingIgnoreCase() throws InterruptedException {
+    void testFindByEventDetailsContainingIgnoreCase() {
         EventFindRequest eventFindRequest = EventFindRequest.builder()
                 .keyword("DB")
                 .build();
@@ -181,7 +182,7 @@ class EventSearchServiceTest {
 
     @Test
     @DisplayName("departmentId + eventDetails 복합 조건 검색")
-    void testFindByDepartmentIdAndEventDetailsContainingIgnoreCase() throws InterruptedException {
+    void testFindByDepartmentIdAndEventDetailsContainingIgnoreCase() {
         EventFindRequest eventFindRequest = EventFindRequest.builder()
                 .departmentId("DEVOPS")
                 .keyword("timeout")
@@ -198,4 +199,75 @@ class EventSearchServiceTest {
             log.info("부서명 + 이벤트 검색 성공: {}", eventResponse);
         }
     }
+
+    @Test
+    @DisplayName("eventLevels 리스트 조건으로 이벤트 검색")
+    void testFindByEventLevelsAndDateRange1() {
+        EventFindRequest eventFindRequest = EventFindRequest.builder()
+                .eventLevels(List.of("CRITICAL", "WARN"))
+                .build();
+
+        Page<EventResponse> result = eventSearchService
+                .searchEventsByDetails(eventFindRequest, PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).isNotEmpty();
+        assertThat(result.getContent())
+                .allMatch(event -> eventFindRequest.getEventLevels().contains(event.getEventLevel()));
+        assertThat(result.getContent())
+                .allMatch(event -> !event.getEventAt().isBefore(eventFindRequest.getStartAt())
+                        && !event.getEventAt().isAfter(eventFindRequest.getEndAt()));
+
+        for (EventResponse eventResponse : result.getContent()) {
+            log.info("레벨 + 날짜 범위 조건 검색 성공: {}", eventResponse);
+        }
+    }
+
+    @Test
+    @DisplayName("날짜 범위(startAt, endAt) 조건으로 이벤트 검색")
+    void testFindByEventLevelsAndDateRange() {
+        EventFindRequest eventFindRequest = EventFindRequest.builder()
+                .startAt(LocalDateTime.of(2025, 5, 12, 0, 0, 0, 0))
+                .endAt(LocalDateTime.of(2025, 5, 12, 23, 59, 59, 59))
+                .build();
+
+        Page<EventResponse> result = eventSearchService
+                .searchEventsByDetails(eventFindRequest, PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).isNotEmpty();
+        assertThat(result.getContent())
+                .allMatch(event -> !event.getEventAt().isBefore(eventFindRequest.getStartAt())
+                        && !event.getEventAt().isAfter(eventFindRequest.getEndAt()));
+
+        for (EventResponse eventResponse : result.getContent()) {
+            log.info("날짜 범위 조건 검색 성공: {}", eventResponse);
+        }
+    }
+
+    @Test
+    @DisplayName("sourceId, sourceType 그리고 날짜 범위 조건 검색")
+    void testFindBySourceIdAndSourceTypeAndDateRange() {
+        EventFindRequest eventFindRequest = EventFindRequest.builder()
+                .sourceId("SRC123")
+                .sourceType("SYSTEM")
+                .startAt(LocalDateTime.of(2025, 5, 12, 0, 0))
+                .endAt(LocalDateTime.of(2025, 5, 12, 23, 59))
+                .build();
+
+        Page<EventResponse> result = eventSearchService
+                .searchEventsByDetails(eventFindRequest, PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).isNotEmpty();
+        assertThat(result.getContent())
+                .allMatch(event -> event.getEventSource().getSourceId().equals("SRC123"));
+        assertThat(result.getContent())
+                .allMatch(event -> event.getEventSource().getSourceType().equals("SYSTEM"));
+        assertThat(result.getContent())
+                .allMatch(event -> !event.getEventAt().isBefore(eventFindRequest.getStartAt())
+                        && !event.getEventAt().isAfter(eventFindRequest.getEndAt()));
+
+        for (EventResponse eventResponse : result.getContent()) {
+            log.info("소스ID + 소스타입 + 날짜 범위 조건 검색 성공: {}", eventResponse);
+        }
+    }
+
 }

@@ -91,6 +91,7 @@ public class EventServiceImpl implements EventService {
                 .levelName(request.getEventLevel())
                 .eventSource(eventSource)
                 .departmentId(request.getDepartmentId())
+                .eventAt(request.getEventAt())
                 .build();
 
         eventRepository.save(event);

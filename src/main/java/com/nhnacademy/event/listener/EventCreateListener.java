@@ -15,7 +15,6 @@ public class EventCreateListener {
 
     @RabbitListener(queues = "#{rabbitMQProperties.queues.eventCreateQueue}")
     public void handlerCreateEvent(EventCreateRequest eventCreateRequest) {
-        log.debug("event 받음");
         eventService.createEvent(eventCreateRequest);
     }
 }

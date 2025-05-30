@@ -6,9 +6,6 @@ WORKDIR /app
 ARG GITHUB_ACTOR
 ARG GITHUB_TOKEN
 
-# settings.xml 복사
-COPY .m2/settings.xml /root/.m2/settings.xml
-
 # 소스 복사
 COPY . .
 

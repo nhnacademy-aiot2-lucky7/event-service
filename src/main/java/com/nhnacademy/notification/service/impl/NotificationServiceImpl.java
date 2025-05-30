@@ -59,6 +59,7 @@ public class NotificationServiceImpl implements NotificationService {
                 Notification notification = Notification.builder()
                         .userNo(userResponse.getUserNo())
                         .event(event)
+                        .isRead(false)
                         .build();
                 notifications.add(notification);
 

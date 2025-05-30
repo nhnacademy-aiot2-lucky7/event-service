@@ -1,12 +1,15 @@
 package com.nhnacademy.event.elasticsearch.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.RangeQuery;
 import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.json.JsonData;
 import com.nhnacademy.event.dto.EventFindRequest;
 import com.nhnacademy.event.dto.EventResponse;
 import com.nhnacademy.event.dto.EventSourceResponse;
@@ -19,6 +22,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Slf4j
@@ -32,13 +37,34 @@ public class EventSearchService {
     // 검색 메소드
     public Page<EventResponse> searchEventsByDetails(EventFindRequest eventFindRequest, Pageable pageable) {
         try {
-            // BoolQuery 조건을 동적으로 추가
             Query query = Query.of(q -> q
                     .bool(b -> {
                         mustTermIfNotBlank(b, "departmentId", eventFindRequest.getDepartmentId());
                         mustTermIfNotBlank(b, "eventSource.sourceId", eventFindRequest.getSourceId());
                         mustTermIfNotBlank(b, "eventSource.sourceType", eventFindRequest.getSourceType());
-                        mustTermIfNotBlank(b, "levelName", eventFindRequest.getEventLevel());
+
+                        if (eventFindRequest.getEventLevels() != null && !eventFindRequest.getEventLevels().isEmpty()) {
+                            b.must(m -> m.terms(t -> t
+                                    .field("levelName")
+                                    .terms(v -> v.value(eventFindRequest.getEventLevels().stream()
+                                            .map(FieldValue::of)
+                                            .toList()))
+                            ));
+                        }
+
+                        if (eventFindRequest.getStartAt() != null || eventFindRequest.getEndAt() != null) {
+                            b.must(m -> {
+                                RangeQuery.Builder r = new RangeQuery.Builder().field("eventAt");
+                                if (eventFindRequest.getStartAt() != null) {
+                                    r.gte(JsonData.of(eventFindRequest.getStartAt().format(DateTimeFormatter.ISO_DATE_TIME)));
+                                }
+                                if (eventFindRequest.getEndAt() != null) {
+                                    r.lte(JsonData.of(eventFindRequest.getEndAt().format(DateTimeFormatter.ISO_DATE_TIME)));
+                                }
+                                return m.range(r.build());
+                            });
+                        }
+
                         if (eventFindRequest.getKeyword() != null && !eventFindRequest.getKeyword().isEmpty()) {
                             b.must(m -> m.match(t -> t
                                     .field("eventDetails")
@@ -50,7 +76,6 @@ public class EventSearchService {
                     })
             );
 
-            // 검색 실행
             SearchResponse<EventDocument> response = elasticsearchClient.search(s -> s
                             .index(INDEX)
                             .query(query)
@@ -65,14 +90,13 @@ public class EventSearchService {
                     EventDocument.class
             );
 
-            // 검색 결과 매핑
             List<EventResponse> contents = response.hits().hits().stream()
                     .map(Hit::source)
                     .map(event -> new EventResponse(
                             event.getEventNo(),
                             event.getEventDetails(),
                             event.getLevelName(),
-                            event.getEventAt(),
+                            LocalDateTime.parse(event.getEventAt(), DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                             event.getDepartmentId(),
                             new EventSourceResponse(
                                     event.getEventSource().getSourceId(),

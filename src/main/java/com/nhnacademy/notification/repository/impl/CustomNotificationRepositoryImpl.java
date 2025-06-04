@@ -2,6 +2,7 @@ package com.nhnacademy.notification.repository.impl;
 
 import com.nhnacademy.event.dto.EventResponse;
 import com.nhnacademy.event.dto.EventSourceResponse;
+import com.nhnacademy.notification.NotificationResponse;
 import com.nhnacademy.notification.domain.Notification;
 import com.nhnacademy.notification.domain.QNotification;
 import com.nhnacademy.notification.repository.CustomNotificationRepository;
@@ -23,7 +24,7 @@ public class CustomNotificationRepositoryImpl extends QuerydslRepositorySupport 
     }
 
     @Override
-    public Page<EventResponse> findNotifications(Long userNo, Boolean isRead, Pageable pageable) {
+    public Page<NotificationResponse> findNotifications(Long userNo, Boolean isRead, Pageable pageable) {
 
         QNotification qNotification = QNotification.notification;
 
@@ -31,10 +32,10 @@ public class CustomNotificationRepositoryImpl extends QuerydslRepositorySupport 
         builder.and(qNotification.userNo.eq(userNo));
         builder.and(qNotification.isRead.eq(isRead));
 
-        JPAQuery<EventResponse> query = new JPAQuery<>(getEntityManager())
+        JPAQuery<NotificationResponse> query = new JPAQuery<>(getEntityManager())
                 .select(Projections.constructor(
-                        EventResponse.class,
-                        qNotification.event.eventNo,
+                        NotificationResponse.class,
+                        qNotification.notificationNo,
                         qNotification.event.eventDetails,
                         qNotification.event.levelName,
                         qNotification.event.eventAt,
@@ -49,7 +50,7 @@ public class CustomNotificationRepositoryImpl extends QuerydslRepositorySupport 
                 .where(builder)
                 .orderBy(qNotification.event.eventAt.desc());
 
-        List<EventResponse> content = Objects.requireNonNull(getQuerydsl())
+        List<NotificationResponse> content = Objects.requireNonNull(getQuerydsl())
                 .applyPagination(pageable, query)
                 .fetch();
 

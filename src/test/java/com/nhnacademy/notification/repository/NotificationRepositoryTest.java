@@ -5,6 +5,7 @@ import com.nhnacademy.event.dto.EventResponse;
 import com.nhnacademy.event.repository.EventRepository;
 import com.nhnacademy.eventsource.domain.EventSource;
 import com.nhnacademy.eventsource.repository.EventSourceRepository;
+import com.nhnacademy.notification.NotificationResponse;
 import com.nhnacademy.notification.domain.Notification;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -102,7 +103,7 @@ class NotificationRepositoryTest {
         }
 
         // when: 읽지 않은 알림 조회 (페이징 처리)
-        Page<EventResponse> result = notificationRepository.findNotifications(1L, false, PageRequest.of(0, 5));
+        Page<NotificationResponse> result = notificationRepository.findNotifications(1L, false, PageRequest.of(0, 5));
 
         // then: 결과가 페이징에 맞게 반환되어야 함
         assertEquals(5, result.getContent().size());  // 첫 페이지에서 5개의 알림
@@ -122,7 +123,7 @@ class NotificationRepositoryTest {
         }
 
         // when: 읽은 알림 조회 (페이징 처리)
-        Page<EventResponse> result = notificationRepository.findNotifications(1L, true, PageRequest.of(0, 5));
+        Page<NotificationResponse> result = notificationRepository.findNotifications(1L, true, PageRequest.of(0, 5));
 
         // then: 결과가 페이징에 맞게 반환되어야 함
         assertEquals(5, result.getContent().size());  // 첫 페이지에서 5개의 알림

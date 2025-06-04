@@ -7,6 +7,7 @@ import com.nhnacademy.common.exception.UnauthorizedException;
 import com.nhnacademy.event.domain.Event;
 import com.nhnacademy.event.dto.EventResponse;
 import com.nhnacademy.event.service.SmsService;
+import com.nhnacademy.notification.NotificationResponse;
 import com.nhnacademy.notification.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -86,10 +87,10 @@ class NotificationServiceImplTest {
     void findNotificationsByReadStatus_Test() {
         // given
         Pageable pageable = Pageable.ofSize(10);
-        List<EventResponse> notifications = List.of(
-                new EventResponse(1L, "디스크 부족", "ERROR", null, "dep-01", null)
+        List<NotificationResponse> notifications = List.of(
+                new NotificationResponse(1L, "디스크 부족", "ERROR", null, "dep-01", null)
         );
-        Page<EventResponse> page = new PageImpl<>(notifications);
+        Page<NotificationResponse> page = new PageImpl<>(notifications);
 
         when(userAdaptor.getMyInfo())
                 .thenReturn(userResponse);
@@ -97,7 +98,7 @@ class NotificationServiceImplTest {
                 .thenReturn(page);
 
         // when
-        Page<EventResponse> result = notificationService.findNotificationsByReadStatus(true, pageable);
+        Page<NotificationResponse> result = notificationService.findNotificationsByReadStatus(true, pageable);
 
         // then
         verify(notificationRepository).findNotifications(any(Long.class), any(Boolean.class), any(Pageable.class));

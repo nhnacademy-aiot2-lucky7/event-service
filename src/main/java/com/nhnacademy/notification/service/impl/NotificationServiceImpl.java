@@ -8,6 +8,7 @@ import com.nhnacademy.event.domain.Event;
 import com.nhnacademy.event.domain.EventLevel;
 import com.nhnacademy.event.dto.EventResponse;
 import com.nhnacademy.event.service.SmsService;
+import com.nhnacademy.notification.NotificationResponse;
 import com.nhnacademy.notification.domain.Notification;
 import com.nhnacademy.notification.repository.NotificationRepository;
 import com.nhnacademy.notification.service.NotificationService;
@@ -16,12 +17,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
@@ -76,11 +79,11 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public Page<EventResponse> findNotificationsByReadStatus(boolean isRead, Pageable pageable) {
+    public Page<NotificationResponse> findNotificationsByReadStatus(boolean isRead, Pageable pageable) {
         Long userNo = getCurrentUserNo();
         log.info("읽음 여부 '{}'로 유저 {}의 알림 조회 요청", isRead, userNo);
 
-        Page<EventResponse> notifications = notificationRepository.findNotifications(userNo, isRead, pageable);
+        Page<NotificationResponse> notifications = notificationRepository.findNotifications(userNo, isRead, pageable);
 
         log.info("조회된 알림 수: {}", notifications.getTotalElements());
         return notifications;

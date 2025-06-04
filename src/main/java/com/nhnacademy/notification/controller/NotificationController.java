@@ -24,12 +24,19 @@ public class NotificationController {
     }
 
     // 알림 목록 조회 (읽음 여부 필터링)
-    @GetMapping
-    public ResponseEntity<Page<NotificationResponse>> getNotifications(
-            @RequestParam boolean isRead,
+    @GetMapping("/read")
+    public ResponseEntity<Page<NotificationResponse>> getNotificationsByRead(
             @PageableDefault(size = 10) Pageable pageable
     ) {
-        Page<NotificationResponse> result = notificationService.findNotificationsByReadStatus(isRead, pageable);
+        Page<NotificationResponse> result = notificationService.findNotificationsByReadStatus(true, pageable);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/unread")
+    public ResponseEntity<Page<NotificationResponse>> getNotificationsByUnRead(
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        Page<NotificationResponse> result = notificationService.findNotificationsByReadStatus(false, pageable);
         return ResponseEntity.ok(result);
     }
 

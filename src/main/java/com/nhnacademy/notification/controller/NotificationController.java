@@ -1,6 +1,7 @@
 package com.nhnacademy.notification.controller;
 
 import com.nhnacademy.event.dto.EventResponse;
+import com.nhnacademy.notification.NotificationResponse;
 import com.nhnacademy.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,11 +25,11 @@ public class NotificationController {
 
     // 알림 목록 조회 (읽음 여부 필터링)
     @GetMapping
-    public ResponseEntity<Page<EventResponse>> getNotifications(
+    public ResponseEntity<Page<NotificationResponse>> getNotifications(
             @RequestParam boolean isRead,
             @PageableDefault(size = 10) Pageable pageable
     ) {
-        Page<EventResponse> result = notificationService.findNotificationsByReadStatus(isRead, pageable);
+        Page<NotificationResponse> result = notificationService.findNotificationsByReadStatus(isRead, pageable);
         return ResponseEntity.ok(result);
     }
 
